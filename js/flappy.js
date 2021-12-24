@@ -95,7 +95,7 @@ function Bird(gameHeight) {
   let flying = false;
 
   this.element = newElement("img", "bird");
-  this.element.src = "../assets/img/bird.png";
+  this.element.src = "../img/bird.png";
 
   this.getY = () => parseInt(this.element.style.bottom.split("px")[0]);
   this.setY = (y) => (this.element.style.bottom = `${y}px`);
