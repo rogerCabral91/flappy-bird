@@ -65,9 +65,97 @@ function Barriers(height, width, opening, spacing, scorePoint) {
   };
 }
 
-const barriers = new Barriers(700, 1200, 200, 400);
-const gameArea = document.querySelector("[fb-flappy]");
-barriers.pairs.forEach((pair) => gameArea.appendChild(pair.element));
-setInterval(() => {
-  barriers.animate();
-}, 20);
+function areSuperimposed(elementA, elementB) {
+  const a = elementA.getBoundingClientRect();
+  const b = elementB.getBoundingClientRect();
+
+  const horizontal =
+    a.left + (a.width - 12) >= b.left && b.left + b.width >= a.left;
+
+  const vertical = a.top + a.height >= b.top && b.top + b.height >= a.top;
+
+  return horizontal && vertical;
+}
+
+function crashed(bird, barriers) {
+  let crashed = false;
+  barriers.pairs.forEach((pairOfBarriers) => {
+    if (!crashed) {
+      const top = pairOfBarriers.top.element;
+      const bottom = pairOfBarriers.bottom.element;
+      crashed =
+        areSuperimposed(bird.element, top) ||
+        areSuperimposed(bird.element, bottom);
+    }
+  });
+  return crashed;
+}
+
+function Bird(gameHeight) {
+  let flying = false;
+
+  this.element = newElement("img", "bird");
+  this.element.src = "../assets/img/bird.png";
+
+  this.getY = () => parseInt(this.element.style.bottom.split("px")[0]);
+  this.setY = (y) => (this.element.style.bottom = `${y}px`);
+
+  window.onkeydown = (e) => (e.keyCode === 32 ? (flying = true) : false);
+  window.onkeyup = (e) => (e.keyCode == 32 ? (flying = false) : true);
+
+  this.animate = () => {
+    const newY = this.getY() + (flying ? 8 : -5);
+    const maximumHeight = gameHeight - this.element.clientHeight;
+
+    if (newY <= 0) {
+      this.setY(0);
+    } else if (newY >= maximumHeight) {
+      this.setY(maximumHeight);
+    } else {
+      this.setY(newY);
+    }
+  };
+
+  this.setY(gameHeight / 2);
+}
+
+function Progress() {
+  this.element = newElement("span", "progress");
+  this.scorePoint = (points) => {
+    this.element.innerHTML = points;
+  };
+  this.scorePoint(0);
+}
+
+function FlappyBird() {
+  let points = 0;
+
+  const gameArea = document.querySelector("[fb-flappy]");
+  const height = gameArea.clientHeight;
+  const width = gameArea.clientWidth;
+
+  const progress = new Progress();
+  const barriers = new Barriers(height, width, 200, 400, () =>
+    progress.scorePoint(++points)
+  );
+  const bird = new Bird(height);
+
+  gameArea.appendChild(progress.element);
+  gameArea.appendChild(bird.element);
+  barriers.pairs.forEach((pair) => gameArea.appendChild(pair.element));
+
+  this.start = () => {
+    const timer = setInterval(() => {
+      barriers.animate();
+      bird.animate();
+
+      if (crashed(bird, barriers)) {
+        clearInterval(timer);
+        if (confirm(`You scored ${points} points! To play again click OK`)) {
+          window.location.reload();
+        }
+      }
+    }, 20);
+  };
+}
+new FlappyBird().start();
