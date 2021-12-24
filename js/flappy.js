@@ -35,9 +35,39 @@ function PairOfBarriers(height, opening, x) {
   this.setX = (x) => (this.element.style.left = `${x}px`);
   this.getWidth = () => this.element.clientWidth;
 
-  this.drawOpening()
-  this.setX(x)
+  this.drawOpening();
+  this.setX(x);
 }
 
-const b = new PairOfBarriers(720, 220, 400)
-document.querySelector('[fb-flappy]').appendChild(b.element)
+function Barriers(height, width, opening, spacing, scorePoint) {
+  this.pairs = [
+    new PairOfBarriers(height, opening, width),
+    new PairOfBarriers(height, opening, width + spacing),
+    new PairOfBarriers(height, opening, width + spacing * 2),
+    new PairOfBarriers(height, opening, width + spacing * 3),
+  ];
+
+  const displacement = 3;
+  this.animate = () => {
+    this.pairs.forEach((pair) => {
+      pair.setX(pair.getX() - displacement);
+
+      if (pair.getX() < -pair.getWidth()) {
+        pair.setX(pair.getX() + spacing * this.pairs.length);
+        pair.drawOpening();
+      }
+
+      const middle = width / 2;
+      const crossedMiddle =
+        pair.getX() + displacement >= middle && pair.getX() < middle;
+      if (crossedMiddle) scorePoint();
+    });
+  };
+}
+
+const barriers = new Barriers(700, 1200, 200, 400);
+const gameArea = document.querySelector("[fb-flappy]");
+barriers.pairs.forEach((pair) => gameArea.appendChild(pair.element));
+setInterval(() => {
+  barriers.animate();
+}, 20);
